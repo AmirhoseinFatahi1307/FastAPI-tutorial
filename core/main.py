@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import random
+from typing import Optional
 
 app = FastAPI()
 
@@ -17,7 +18,7 @@ names_list = [
 
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.get("/names")
-def retireve_names_list(q: str | None = None):
+def retireve_names_list(q: Optionale[str] = None):
     if q:
         return [item for item in names_list if item["name"] == q]
     return names_list
