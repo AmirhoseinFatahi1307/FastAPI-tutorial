@@ -10,12 +10,16 @@ names_list = [
     {"id": 3, "name": "maryam"},
     {"id": 4, "name": "mobina"},
     {"id": 5, "name": "mmad"},
+    {"id": 7, "name": "ali"},
+    {"id": 6, "name": "ali"},
 ]
 
 
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.get("/names")
-def retireve_names_list():
+def retireve_names_list(q: str | None = None):
+    if q:
+        return [item for item in names_list if item["name"] == q]
     return names_list
 
 
