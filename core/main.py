@@ -20,7 +20,9 @@ names_list = [
 
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.get("/names")
-def retireve_names_list(q: Annotated[str | None, Query(max_length=50)] = None):
+def retireve_names_list(
+    q: Annotated[str | None, Query(alias="search", max_length=50)] = None,
+):
     if q:
         return [item for item in names_list if item["name"] == q]
     return names_list
