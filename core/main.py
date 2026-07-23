@@ -1,4 +1,14 @@
-from fastapi import FastAPI, Query, status, HTTPException, Path, Form, Body
+from fastapi import (
+    FastAPI,
+    Query,
+    status,
+    HTTPException,
+    Path,
+    Form,
+    Body,
+    UploadFile,
+    File,
+)
 from fastapi.responses import JSONResponse
 import random
 from typing import Annotated
@@ -85,3 +95,19 @@ def root():
     return JSONResponse(
         content={"Massage": "Hello World"}, status_code=status.HTTP_202_ACCEPTED
     )
+
+
+# estefade az file va faghat haminja behesh dastresi darim vali dar uploadfile behine tar va behtare
+# @app.post("/Upload_Files/")
+# async def uploading_file(file :bytes = File(...)):
+# return {"file size": len(file)}
+
+
+@app.post("/Upload_Files/")
+async def uploading_file(file: UploadFile = File(...)):
+    content = await file.read()  # Asynchronous reading
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "file_size": len(content),
+    }
