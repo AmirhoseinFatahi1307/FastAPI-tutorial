@@ -13,8 +13,17 @@ from fastapi.responses import JSONResponse
 import random
 from typing import Annotated
 from typing import Optional
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Application startup")
+    yield
+    print("Application shutdown")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 names_list = [
