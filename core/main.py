@@ -15,6 +15,8 @@ from typing import Annotated
 from typing import Optional
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from schemas import PersonCreateSchema, PersonResponseSchema, PersonUpdateSchema
+from typing import List
 
 
 @asynccontextmanager
@@ -39,7 +41,7 @@ names_list = [
 
 
 # /names (GET(RETRIEVE), POST(CREATE))
-@app.get("/names")
+@app.get("/names", response_model=List[PersonResponseSchema])
 def retireve_names_list(
     q: Annotated[str | None, Query(alias="search", max_length=50)] = None,
 ):
@@ -48,29 +50,18 @@ def retireve_names_list(
     return names_list
 
 
-@dataclass
-class Student:
-    name: str
-    age: int
-
-
-@dataclass
-class StudentResponse:
-    id: int
-    name: str
-    age: int
-
-
 # /names (GET(RETRIEVE), POST(CREATE))
-@app.post("/names", status_code=status.HTTP_201_CREATED, response_model=StudentResponse)
-async def create_name(student: Student):
-    name_obj = {"id": random.randint(6, 100), "name": student.name}
+@app.post(
+    "/names", status_code=status.HTTP_201_CREATED, response_model=PersonResponseSchema
+)
+async def create_name(person: PersonCreateSchema):
+    name_obj = {"id": random.randint(6, 100), "name": person.name}
     names_list.append(name_obj)
     return name_obj
 
 
 # /names/:id (GET(RETRIEVE), PUT/PATCH(UPDATE), DELETE(DELETE))
-@app.get("/names/{name_id}")
+@app.get("/names/{name_id}", response_model=List[PersonResponseSchema])
 def retrieving_name_detail(
     name_id: int = Path(
         alias="Object_id",
@@ -87,11 +78,15 @@ def retrieving_name_detail(
 
 
 # /names/:id (GET(RETRIEVE), PUT/PATCH(UPDATE), DELETE(DELETE))
-@app.put("/names/{name_id}", status_code=status.HTTP_200_OK)
-def Update_name_detail(name_id: int = Path(), name: str = Form()):
+@app.put(
+    "/names/{name_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=PersonResponseSchema,
+)
+def Update_name_detail(person: PersonUpdateSchema, name_id: int = Path()):
     for item in names_list:
         if item["id"] == name_id:
-            item["name"] = name
+            item["name"] = person.name
             return item
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
