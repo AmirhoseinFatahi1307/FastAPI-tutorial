@@ -14,6 +14,7 @@ import random
 from typing import Annotated
 from typing import Optional
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
 
 @asynccontextmanager
@@ -47,12 +48,25 @@ def retireve_names_list(
     return names_list
 
 
+@dataclass
+class Student:
+    name: str
+    age: int
+
+
+@dataclass
+class StudentResponse:
+    id: int
+    name: str
+    age: int
+
+
 # /names (GET(RETRIEVE), POST(CREATE))
-@app.post("/names", status_code=status.HTTP_201_CREATED)
-def create_name(name: str = Body(embed=True)):
-    name_obj = {"id": random.randint(6, 100), "name": name}
+@app.post("/names", status_code=status.HTTP_201_CREATED, response_model=StudentResponse)
+async def create_name(student: Student):
+    name_obj = {"id": random.randint(6, 100), "name": student.name}
     names_list.append(name_obj)
-    return f"id : {name_obj["id"]} and name : {name_obj["name"]}"
+    return name_obj
 
 
 # /names/:id (GET(RETRIEVE), PUT/PATCH(UPDATE), DELETE(DELETE))
