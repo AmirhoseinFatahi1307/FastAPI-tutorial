@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Column, Integer, String
 
 # from sqlalchemy ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -21,6 +21,17 @@ Sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # create base class for declaring tables
 Base = declarative_base()
+
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    firstname = Column(String(length=30))
+    lastname = Column(String(length=30))
+    age = Column(Integer)
+
+    def __repr__(self):
+        return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
 
 
 # to create tables and databases
