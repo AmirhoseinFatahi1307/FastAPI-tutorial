@@ -48,40 +48,49 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     firstname = Column(String(length=30))
-    lastname = Column(String(length=30))
+    lastname = Column(String(length=30), nullable=True)
     age = Column(Integer)
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
 
 
-class UserType(PythonEnum):
-    ADMIN = "admin"
-    USER = "user"
-    GUEST = "guest"
-
-
-class SampleModel(Base):
-    __tablename__ = "sample_model"
-
-    id = Column(Integer, primary_key=True)
-    string_field = Column(String(100))
-    text_field = Column(Text)
-    boolean_field = Column(Boolean)
-    integer_field = Column(Integer)
-    float_field = Column(Float)
-    numeric_field = Column(Numeric(10, 2))
-    date_field = Column(Date)
-    datetime_field = Column(DateTime)
-    time_field = Column(Time)
-    interval_field = Column(Interval)
-    enum_field = Column(Enum(UserType))
-    array_field = Column(ARRAY(Integer))
-    json_field = Column(JSON)
-    uuid_field = Column(UUID)
-    foreign_key_field = Column(Integer, ForeignKey("related_table.id"))
-    binary_field = Column(LargeBinary)
-
-
 # to create tables and databases
 Base.metadata.create_all(engine)
+
+
+session = Sessionlocal()
+
+# inserting data
+# ali = User(firstname="ali", age=31)
+# session.add(ali)
+# session.commit()
+
+# bulk insert
+# mobina = User(firstname="mobina", age=20)
+# amir = User(firstname="amir", age=12)
+# users = [mobina, amir]
+# session.add_all(users)
+# session.commit()
+
+
+# retrieve all data
+# users = session.query(User).all()
+# print(users)
+
+
+# retrieve data with filter
+users = (
+    session.query(User).filter_by(firstname="amir", age=12).one_or_none()
+)  # .first()
+
+# updating a record of data
+# users.lastname = "fatahi"
+# session.commit()
+
+# deleting a data
+if users:
+    session.delete(users)
+    session.commit()
