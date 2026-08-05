@@ -17,6 +17,7 @@ from sqlalchemy import (
     LargeBinary,
     UUID,
     create_engine,
+    ForeignKey,
 )
 from enum import Enum as PythonEnum
 from sqlalchemy.orm import relationship
@@ -53,8 +54,24 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
 
+    address = relationship("Address", back_populates="user")
+
     def __repr__(self):
         return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
+
+
+class Address(Base):
+    __tabalename__ = "Addresses"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    city = Column(String(30))
+    state = Column(String(30))
+    zip_code = Column(Integer)
+
+    def __repr__(self):
+        return f"Address: id={self.id}, city= {self.city}"
+
+    user = relationship("User", back_populates="address")
 
 
 # to create tables and databases
