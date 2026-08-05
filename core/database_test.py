@@ -54,7 +54,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
 
-    address = relationship("Address", back_populates="user")
+    address = relationship("Address", backref="user")
 
     def __repr__(self):
         return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
@@ -70,8 +70,6 @@ class Address(Base):
 
     def __repr__(self):
         return f"Address: id={self.id}, city= {self.city}"
-
-    user = relationship("User", back_populates="address")
 
 
 # to create tables and databases
