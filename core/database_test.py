@@ -56,12 +56,14 @@ class User(Base):
 
     address = relationship("Address", backref="user")
 
+    profiles = relationship("profile", backref="user", uselist=False)
+
     def __repr__(self):
         return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
 
 
 class Address(Base):
-    __tabalename__ = "Addresses"
+    __tablename__ = "Addresses"
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     city = Column(String(30))
@@ -72,11 +74,30 @@ class Address(Base):
         return f"Address: id={self.id}, city= {self.city}"
 
 
+class profile(Base):
+    __tablename__ = "Profiles"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    # alterative
+    # user_id = Column(Integer, ForeignKey("users.id"), primary_key=Ture)
+    firstname = Column(String())
+    lastname = Column(String())
+    bio = Column(Text(), nullable=True)
+
+    def __repr__(self):
+        return f"Profile(ID= {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
+
+
 # to create tables and databases
 Base.metadata.create_all(engine)
 
 
 session = Sessionlocal()
+
+fard = session.query(User).filter_by(firstname="Amir").one_or_none()
+# session.add(profile(user_id=fard.id, firstname="Amir", lastname="Fatahi"))
+# session.commit()
+print(fard.profiles.lastname)
 
 # inserting data
 # ali = User(firstname="ali", age=31)
