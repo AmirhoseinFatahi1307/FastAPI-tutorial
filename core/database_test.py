@@ -18,9 +18,12 @@ from sqlalchemy import (
     UUID,
     create_engine,
     ForeignKey,
+    Table,
+    UniqueConstraint,
 )
 from enum import Enum as PythonEnum
 from sqlalchemy.orm import relationship
+import datetime
 
 # from sqlalchemy ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -44,6 +47,16 @@ Sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # create base class for declaring tables
 Base = declarative_base()
 
+enrollments = Table(
+    "enrollment",
+    Base.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("user_id", Integer, ForeignKey("users.id")),
+    Column("course_id", Integer, ForeignKey("courses.id")),
+    Column("enrolled_date", DateTime(), default=datetime.datetime.now),
+    UniqueConstraint("user_id", "course_id", name="unique_user_course_enrolled"),
+)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -57,6 +70,8 @@ class User(Base):
     address = relationship("Address", backref="user")
 
     profiles = relationship("profile", backref="user", uselist=False)
+
+    courses = relationship("Course", secondary=enrollments, back_populates="attendees")
 
     def __repr__(self):
         return f"User (id = {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
@@ -88,6 +103,18 @@ class profile(Base):
         return f"Profile(ID= {self.id}, firstname = {self.firstname}, lastname = {self.lastname})"
 
 
+class Course(Base):
+    __tablename__ = "courses"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String())
+    description = Column(Text())
+
+    attendees = relationship("User", secondary=enrollments, back_populates="courses")
+
+    def __repr__(self):
+        return f"Courses(id = {self.id}, title = {self.title})"
+
+
 # to create tables and databases
 Base.metadata.create_all(engine)
 
@@ -95,6 +122,16 @@ Base.metadata.create_all(engine)
 session = Sessionlocal()
 
 fard = session.query(User).filter_by(firstname="Amir").one_or_none()
+
+session.add(Course(title="python", description="this is a python course"))
+course = session.query(Course).filter_by(title="python").first()
+course.attendees.append(fard)
+
+
+print(course.attendees)
+print(fard.courses)
+
+
 # session.add(profile(user_id=fard.id, firstname="Amir", lastname="Fatahi"))
 # session.commit()
 print(fard.profiles.lastname)
