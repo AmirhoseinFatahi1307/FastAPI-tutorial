@@ -8,6 +8,7 @@ from fastapi import (
     Body,
     UploadFile,
     File,
+    Depends,
 )
 from fastapi.responses import JSONResponse
 import random
@@ -17,11 +18,14 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from schemas import PersonCreateSchema, PersonResponseSchema, PersonUpdateSchema
 from typing import List
+from database import Base, engine, get_db, Person
+from sqlalchemy.orm import session
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Application startup")
+    Base.metadata.create_all(engine)
     yield
     print("Application shutdown")
 
@@ -43,38 +47,67 @@ names_list = [
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.get("/names", response_model=List[PersonResponseSchema])
 def retireve_names_list(
-    q: Annotated[str | None, Query(alias="search", max_length=50)] = None,
+    q: Annotated[
+        str | None,
+        Query(
+            deprecated=True,
+            alias="search",
+            description="it will be searched with the title you provided",
+            example="ali",
+            max_length=50,
+        ),
+    ] = None,
+    db: session = Depends(get_db),
 ):
+    query = db.query(Person)
     if q:
-        return [item for item in names_list if item["name"] == q]
-    return names_list
+        query = query.filter_by(name=q)
+    result = query.all()
+    return result
+    # if q:
+    # return [item for item in names_list if item["name"] == q]
+    # return names_list
 
 
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.post(
     "/names", status_code=status.HTTP_201_CREATED, response_model=PersonResponseSchema
 )
-async def create_name(person: PersonCreateSchema):
-    name_obj = {"id": random.randint(6, 100), "name": person.name}
-    names_list.append(name_obj)
-    return name_obj
+async def create_name(
+    request: PersonCreateSchema,
+    db: session = Depends(get_db),
+):
+    # name_obj = {"id": random.randint(6, 100), "name": person.name}
+    # names_list.append(name_obj)
+    new_person = Person(name=request.name)
+    db.add(new_person)
+    db.commit()
+    db.refresh(new_person)
+    return new_person
 
 
 # /names/:id (GET(RETRIEVE), PUT/PATCH(UPDATE), DELETE(DELETE))
-@app.get("/names/{name_id}", response_model=List[PersonResponseSchema])
-def retrieving_name_detail(
+@app.get("/names/{name_id}", response_model=PersonResponseSchema)
+async def retrieving_name_detail(
     name_id: int = Path(
-        alias="Object_id",
         title="Object id",
         description="The id of the name in names-list",
-    )
+    ),
+    db: session = Depends(get_db),
 ):
-    for name in names_list:
-        if name["id"] == name_id:
-            return name["name"]
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
-    )
+    query = db.query(Person).filter_by(id=name_id).one_or_none()
+    if query:
+        return query
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+        )
+    # for name in names_list:
+    # if name["id"] == name_id:
+    # return name["name"]
+    # raise HTTPException(
+    # status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+    # )
 
 
 # /names/:id (GET(RETRIEVE), PUT/PATCH(UPDATE), DELETE(DELETE))
@@ -83,29 +116,51 @@ def retrieving_name_detail(
     status_code=status.HTTP_200_OK,
     response_model=PersonResponseSchema,
 )
-def Update_name_detail(person: PersonUpdateSchema, name_id: int = Path()):
-    for item in names_list:
-        if item["id"] == name_id:
-            item["name"] = person.name
-            return item
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
-    )
+def Update_name_detail(
+    request: PersonUpdateSchema, name_id: int = Path(), db: session = Depends(get_db)
+):
+    person = db.query(Person).filter_by(id=name_id).one_or_none()
+    if person:
+        person.name = request.name
+        db.commit()
+        db.refresh(person)
+        return person
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+        )
+    # for item in names_list:
+    # if item["id"] == name_id:
+    # item["name"] = person.name
+    # return item
+    # raise HTTPException(
+    #  status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+    # )
 
 
 # /names (GET(RETRIEVE), POST(CREATE))
 @app.delete("/names/{name_id}")
-def Delete_name(name_id: int):
-    for item in names_list:
-        if item["id"] == name_id:
-            names_list.remove(item)
-            return JSONResponse(
-                content={"Detail": "Object remove succssesfully "},
-                status_code=status.HTTP_200_OK,
-            )
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
-    )
+def Delete_name(name_id: int, db: session = Depends(get_db)):
+    person = db.query(Person).filter_by(id=name_id).one_or_none()
+    if person:
+        db.delete(person)
+        db.commit()
+        return JSONResponse(content={"Detail": "Object remove succssesfully "})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+        )
+    # for item in names_list:
+    # if item["id"] == name_id:
+    # names_list.remove(item)
+    # return JSONResponse(
+    # content={"Detail": "Object remove succssesfully "},
+    # status_code=status.HTTP_200_OK,
+    # raise HTTPException(
+    # status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+
+
+# )
 
 
 @app.get("/")
